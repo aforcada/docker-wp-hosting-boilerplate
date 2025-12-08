@@ -1,0 +1,27 @@
+services:
+  wordpress:
+    image: wordpress:${WP_TAG:-php8.3-apache}
+    container_name: ${SITE_NAME}-wp
+    volumes:
+      - ./html:/var/www/html
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_USER: ${DB_USER}
+      WORDPRESS_DB_PASSWORD: ${DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${DB_NAME}
+    networks:
+      - web-net
+      - db-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${SITE_NAME}.rule=Host(${DOMAINS})"
+      - "traefik.http.routers.${SITE_NAME}.tls.certresolver=myresolver"
+      - "traefik.docker.network=web-net"
+      - "traefik.http.services.${SITE_NAME}.loadbalancer.server.port=80"
+    restart: unless-stopped
+
+networks:
+  web-net:
+    external: true
+  db-net:
+    external: true

@@ -1,0 +1,23 @@
+# System
+.DS_Store
+.editorconfig
+.vscode/
+*.log
+
+# Environment Variables (Secrets)
+.env
+.env.local
+
+# Traefik Certificates (SSL)
+traefik/acme.json
+
+# Database Data (Persistent storage)
+mariadb/*
+!mariadb/.gitkeep
+
+# Created Sites (WordPress installations)
+sites/*
+!sites/.gitkeep
+
+# SFTP Configuration (Contains passwords)
+sftp/users.conf

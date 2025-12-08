@@ -1,0 +1,72 @@
+services:
+  traefik:
+    image: traefik:${TRAEFIK_TAG:-v3.6}
+    container_name: traefik
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=${TRAEFIK_EMAIL}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik/acme.json:/letsencrypt/acme.json"
+    networks:
+      - web-net
+    restart: always
+
+  mariadb:
+    image: mariadb:${MARIADB_TAG:-11.8}
+    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./mariadb:/var/lib/mysql
+    networks:
+      - db-net
+    restart: always
+
+  sftp:
+    image: atmoz/sftp
+    container_name: sftp
+    ports:
+      - "2222:22"
+    volumes:
+      - ./sites:/home
+      - ./sftp/users.conf:/etc/sftp/users.conf:ro
+    networks:
+      - web-net
+    restart: always
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      PMA_HOST: mariadb
+      UPLOAD_LIMIT: 64M
+      PMA_ABSOLUTE_URI: /phpmyadmin/
+    networks:
+      - db-net
+      - web-net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.middlewares.pma-strip.stripprefix.prefixes=/phpmyadmin"
+      - "traefik.http.routers.pma.rule=PathPrefix(`/phpmyadmin`)"
+      - "traefik.http.routers.pma.middlewares=pma-strip"
+      - "traefik.http.routers.pma.tls.certresolver=myresolver"
+      - "traefik.http.routers.pma.priority=100"
+      - "traefik.docker.network=web-net"
+    restart: always
+
+networks:
+  web-net:
+    external: true
+  db-net:
+    external: true
