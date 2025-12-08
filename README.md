@@ -23,7 +23,7 @@ This repository contains a complete Docker-based infrastructure for hosting mult
 
    ```bash
    git clone <repo-url>
-   cd wp-hosting-boilerplate
+   cd docker-wp-hosting-boilerplate
    ```
 
 2. **Initialize the environment:**
