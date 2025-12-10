@@ -12,8 +12,8 @@
 traefik/acme.json
 
 # Database Data (Persistent storage)
-mariadb/*
-!mariadb/.gitkeep
+db/*
+!db/.gitkeep
 
 # Created Sites (WordPress installations)
 sites/*

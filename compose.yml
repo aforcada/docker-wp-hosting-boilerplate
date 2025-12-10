@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:${TRAEFIK_TAG:-v3.6}
+    image: traefik:${TRAEFIK_TAG}
     container_name: traefik
     command:
       - "--providers.docker=true"
@@ -12,23 +12,28 @@ services:
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.email=${TRAEFIK_EMAIL}"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      # Enable dynamic configuration for custom certs
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik/acme.json:/letsencrypt/acme.json"
+      - "./traefik/dynamic:/etc/traefik/dynamic"
+      - "./traefik/certs:/certs"
     networks:
       - web-net
     restart: always
 
-  mariadb:
-    image: mariadb:${MARIADB_TAG:-11.8}
-    container_name: mariadb
+  db:
+    image: ${DB_IMAGE}:${DB_TAG}
+    container_name: db
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
     volumes:
-      - ./mariadb:/var/lib/mysql
+      - ./db:/var/lib/mysql
     networks:
       - db-net
     restart: always
@@ -49,7 +54,7 @@ services:
     image: phpmyadmin/phpmyadmin
     container_name: phpmyadmin
     environment:
-      PMA_HOST: mariadb
+      PMA_HOST: db
       UPLOAD_LIMIT: 64M
       PMA_ABSOLUTE_URI: /phpmyadmin/
     networks:
@@ -67,6 +72,6 @@ services:
 
 networks:
   web-net:
-    external: true
+    name: web-net
   db-net:
-    external: true
+    name: db-net
